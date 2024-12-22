@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form>
+            <input type="text" placeholder="API Key" required>
+            <button type="submit">Einloggen</button>
+        </form>
+    </div>
+
+    <script>
+        let apikey = "";
+        
+        // Funktion zum Setzen des API Keys
+        function setInput(ev) {
+            apikey = ev.target.value;
+            console.log(ev.target.value);
+        }
+
+        // Funktion zum Absenden des Formulars
+        function postForm(ev) {
+            ev.preventDefault();  // Verhindert die Standardformularübertragung
+            console.log(ev);
+            try {
+                fetch(`https://combinator.de/playapi/posts/`, {
+                    method: 'GET',
+                    headers: {
+                        'playAPI-Key': apikey,
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data[0]?.includes("API Key is invalid")) {
+                        console.log("No valid key");
+                    } else {
+                        console.log("Key is correct");
+                        localStorage.setItem("apiKey", apikey);
+                        apikey = "";
+                        location.href = "/api3.html";
+                    }
+                    console.log("data", data);
+                });
+            } catch (error) {
+                console.log("Error", error);
+            }
+        }
+
+        // EventListener für die Eingabe und das Absenden des Formulars
+        document.querySelector("form").addEventListener("submit", ev => postForm(ev));
+        document.querySelector("input").addEventListener("input", ev => setInput(ev));
+
+        // EventListener für die Enter-Taste (um das Formular auch manuell auszuführen)
+        document.querySelector("input").addEventListener("keydown", function(ev) {
+            if (ev.key === "Enter") {  // Wenn Enter gedrückt wird
+                ev.preventDefault();  // Verhindert das Standardverhalten (z.B. Seitenreload)
+                postForm(ev);  // Führt die postForm-Funktion aus
+            }
+        });
+    </script>
+</body>
+</html>

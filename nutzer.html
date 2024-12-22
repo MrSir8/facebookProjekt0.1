@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Posts</title>
+    <link rel="stylesheet" href="nutzer.css">
+</head>
+<body>  
+    <div class="sidebar">
+
+        <button onclick="window.location.href='api3.html'" class="back_btn" >Zurück</button>
+    </div>
+
+    <div id="container">
+        <div id="ausgabe_name"></div>
+        <div id="ausgabe" class="nutzer_ausgabe"></div>
+    </div>
+
+</body>
+</html>
+<script>
+    let obj_ausgabe_name = document.getElementById("ausgabe_name")
+    let obj_ausgabe = document.getElementById("ausgabe");
+    let key = localStorage.getItem("apiKey");
+    
+
+    // Hole die komplette URL (e.g., "https://localhost:5500/zeigeuser?userid=5")
+    const url = window.location.href;
+    // Erstelle ein URL-Objekt
+    const urlParams = new URL(url);
+    // Suche die Parameter
+    const params = new URLSearchParams(urlParams.search);
+    // Greife auf einen Parameter zu:
+    const userId = params.get('userid');
+
+    console.log("User ID aus URL:", userId);
+
+    let link = 'https://combinator.de/playapi/user-posts/' + userId + '/';
+
+    function updatePosts() {
+        fetch(link, {
+            method: 'GET',
+            headers: {
+                'playAPI-Key': key,
+            }
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log("Antwort von API:", data);
+            let antwort = JSON.parse(data);
+            verarbeiteAntwort(antwort);
+        })
+        .catch(error => {
+            console.error('Fehler beim Abrufen der Daten:', error);
+            obj_ausgabe.innerHTML = 'Fehler beim Laden der Daten.';
+        });
+    }
+
+    function verarbeiteAntwort(antwort) {
+        obj_ausgabe.innerHTML = "";
+        let posts = antwort.results;
+        let speicher_name = "";
+        console.log("Gefilterte Posts:", posts);
+        let person = "";
+        let i = 1;
+        
+     posts.forEach(post => {
+        
+        obj_ausgabe.innerHTML += "<h3>" + i +". "+ post.content + "</h3>" ;
+        i++;
+        person =  post.user.first_name;
+    
+    }); 
+    obj_ausgabe_name.innerHTML = "<h1>" +"Alle Beiträge von "+ person + ": " + "</h1>";
+       
+    }
+    document.addEventListener("DOMContentLoaded", updatePosts);
+</script>
