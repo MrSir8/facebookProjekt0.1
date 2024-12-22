@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="api3.css">
+</head>
+
+<body>
+   
+    <div class="sidebar">
+        <p>Menü</p>
+        <button class="btn" id="next">Nächsten Seite</button> <br>
+        <button class="btn" id="back">Letzte Beiträge</button> <br>
+        <button class="btn" id="rand_post">  Random Post  </button> <br>
+    </div>
+    
+    <div class="main-content">
+        <!-- Post Eingabe und Button ganz oben -->
+        <div class="container">
+            <input type="text" autocomplete="off" name="text" class="input" id="input" placeholder="Post">
+            <input type="button" class="btn" id="btn" value="Add Post">
+        </div>
+        
+        <!-- Container für Post und Nutzer Ausgabe nebeneinander -->
+        <!-- Hier wird die Flexbox genutzt, um die Ausgaben nebeneinander zu zeigen -->
+        <div class="outputs">
+            <div class="post-container" id="ausgabe"></div> 
+            <div class="nutzer_container" id="ausgabe_nutzer"></div>
+        </div>
+    </div> 
+
+    
+
+    
+</body>
+</html>
+<script>
+
+    let key = localStorage.getItem("apiKey");//'P0kI0HJjcVD5iZy90f2t-4NXwvgRdZpSH2ypnnj98i9HbE2m7dbqenMp_If2u_HGqMp63Z05pagBhj1GCvtQBGFkDQtoBvyRNB84'
+
+    let obj_input = document.getElementById("input")
+    let obj_ausgabe = document.getElementById("ausgabe")
+    let obj_ausgabe_nutzer = document.getElementById("ausgabe_nutzer")
+    let btn = document.getElementById("btn")
+    let url = 'https://combinator.de/playapi/posts/'
+
+    let antwort_test;
+
+    
+    updatePosts();
+    getUsers();
+    
+   
+    function updatePosts(){
+       
+
+        // GET-Anfrage an die PlayAPI senden und die Antwort ausgeben
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'playAPI-Key': key,
+                
+            }
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log(data)
+            let antwort = JSON.parse(data);
+            verarbeiteAntwort(antwort);
+           
+        });
+    }
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>"']/g, function(match) {
+            switch (match) {
+                case '&': return '&amp;';
+                case '<': return '&lt;';
+                case '>': return '&gt;';
+                case '"': return '&quot;';
+                case "'": return '&apos;';
+            }
+        });
+    }
+
+    function verarbeiteAntwort(antwort){
+        url = antwort.next;
+        obj_ausgabe.innerHTML=""
+        posts = antwort.results
+        antwort_test = antwort
+        console.log(posts)
+        for(let i = 0; i < posts.length; i++){
+            
+            let user = posts[i].user.first_name;
+            let link = '<a href ="nutzer.html?userid='+posts[i].user.id+'">';
+            let content =  posts[i].content;
+            content = escapeHTML(content);
+            obj_ausgabe.innerHTML = obj_ausgabe.innerHTML + link + user + ": " + "</a>" + content+ "<br>";
+        }
+    }
+
+   
+     
+
+
+    
+
+    //window.setInterval(updatePosts,1000);
+
+
+    function add(){
+    // POST-Anfrage an die PlayAPI senden, um einen neuen Beitrag zu erstellen
+    fetch('https://combinator.de/playapi/posts/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'playAPI-Key': key,
+        },
+        body: JSON.stringify({
+            content: obj_input.value,
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+
+        console.log('Antwort vom Server:', data);
+    })
+    .catch(error => {
+        console.error('Fehler bei der POST-Anfrage:', error);
+    });
+    
+    }
+
+    function setURLNext(){
+        url = antwort_test.next;
+        updatePosts();
+    }
+
+    
+    function setURLPrev(){
+        url = antwort_test.previous;
+        updatePosts();
+    }
+
+
+   function getRandomPostApi(){
+        console.log(url);
+        fetch(`https://combinator.de/playapi/posts/`, {
+            method: 'GET',
+            headers: {
+                'playAPI-Key': key,
+                
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            
+            const anzahlSeiten = Math.floor(data.count / 30) 
+            console.log(anzahlSeiten);
+            let randomPage = getRandomNumberBetween(1,anzahlSeiten);
+            console.log(randomPage);
+
+
+            fetch(`https://combinator.de/playapi/posts/?page=${randomPage}`, {
+            method: 'GET',
+            headers: {
+                'playAPI-Key': key,
+                
+            },
+            })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            let randomPost = getRandomNumberBetween(1,30);
+            console.log(data.results[randomPost])
+            let user = data.results[randomPost].user.first_name;
+            let link = '<a href ="nutzer.html?userid='+data.results[randomPost].user.id+'">';
+            obj_ausgabe.innerHTML= link + user + "</a>"+ ": " + data.results[randomPost].content;
+        });
+
+
+
+            
+           
+        });
+    }
+
+    function getRandomNumberBetween(min, max) { 
+    return Math.floor(Math.random() * (max - min) + min);
+    }    
+    
+    
+
+    function getUsers(){
+        fetch(`https://combinator.de/playapi/users/`, {
+            method: 'GET',
+            headers: {
+                'playAPI-Key': key,
+                
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data)
+            displayUsers(data.results);
+        })
+    };
+
+    function displayUsers(users){
+      const container =  document.createElement("div");
+      container.className= "display_User"; 
+      const userList = document.createElement("ul");
+      for(let i= 0; i<users.length; i++){
+      const user = document.createElement("li");
+      user.innerHTML = users[i].username;
+        userList.appendChild(user);
+    }
+    container.appendChild(userList);
+    obj_ausgabe_nutzer.append(container);
+    }
+ 
+    let btn_back = document.getElementById("back")
+    let btn_next = document.getElementById("next")
+    let btn_rand_post = document.getElementById("rand_post")
+
+    btn.addEventListener("click", add)  
+    btn_next.addEventListener("click", setURLNext)
+    btn_back.addEventListener("click", setURLPrev)
+    btn_rand_post.addEventListener("click", getRandomPostApi)
+    
+
+
+
+
+    
+
+</script>
+
+
+
+
+
